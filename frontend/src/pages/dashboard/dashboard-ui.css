@@ -88,3 +88,6 @@
 .form-row-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .form-checkbox { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; }
 .form-checkbox input { width: auto; }
+
+.image-upload-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.image-upload-preview { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color, #e2e2e2); }

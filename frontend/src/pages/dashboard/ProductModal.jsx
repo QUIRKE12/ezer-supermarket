@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { api } from '../../utils/api';
 
 const CATEGORIES = [
   'Fresh Produce', 'Bakery', 'Dairy & Eggs', 'Beverages', 'Meat & Fish',
@@ -15,10 +16,43 @@ export default function ProductModal({ product, onClose, onSave }) {
   const [form, setForm] = useState(product ? { ...EMPTY, ...product } : EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const isEdit = !!product;
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  async function handleImageFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    setUploading(true);
+    try {
+      // 1. Ask our server for a signed upload target.
+      const sig = await api.post('/media/sign', {});
+
+      // 2. Upload the file straight to Cloudinary — our server never
+      //    touches the bytes.
+      const form = new FormData();
+      form.append('file', file);
+      form.append('api_key', sig.apiKey);
+      form.append('timestamp', String(sig.timestamp));
+      form.append('signature', sig.signature);
+      form.append('folder', sig.folder);
+
+      const uploadRes = await fetch(sig.uploadUrl, { method: 'POST', body: form });
+      const asset = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(asset?.error?.message || 'Cloudinary upload failed');
+
+      update('imageURL', asset.secure_url);
+    } catch (err) {
+      setError(err.message || 'Image upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   }
 
   async function handleSubmit(e) {
@@ -86,8 +120,33 @@ export default function ProductModal({ product, onClose, onSave }) {
           </div>
 
           <div className="form-row">
-            <label htmlFor="p-image">Image URL (optional)</label>
-            <input id="p-image" value={form.imageURL} onChange={(e) => update('imageURL', e.target.value)} placeholder="https://…" />
+            <label htmlFor="p-image">Product image</label>
+            <div className="image-upload-row">
+              {form.imageURL && (
+                <img src={form.imageURL} alt="" className="image-upload-preview" />
+              )}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? 'Uploading…' : form.imageURL ? 'Replace image' : 'Upload image'}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleImageFile}
+              />
+            </div>
+            <input
+              id="p-image"
+              value={form.imageURL}
+              onChange={(e) => update('imageURL', e.target.value)}
+              placeholder="or paste an image URL…"
+            />
           </div>
 
           <div className="form-row">
