@@ -18,7 +18,7 @@ const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     icon: { type: String, default: "🛒" }, // emoji icon, or swap for imageURL below
-    imageURL: { type: String, default: "" }, // Firebase Storage: products/{productId}/image
+    imageURL: { type: String, default: "" }, // Cloudinary secure_url, folder: ezer-products (see backend/config/cloudinary.js)
     category: { type: String, enum: CATEGORIES, required: true },
     price: { type: Number, required: true, min: 0 }, // FRw
     stock: { type: Number, required: true, min: 0, default: 0 },
